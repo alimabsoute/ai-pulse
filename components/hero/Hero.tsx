@@ -1,5 +1,6 @@
 import type { Filters, Repo } from "@/lib/types";
-import { compactNumber, pct, signedNumber } from "@/lib/format";
+import { compactNumber } from "@/lib/format";
+import { CountUp } from "@/components/motion/CountUp";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { queryString } from "@/lib/pulse";
 import Link from "next/link";
@@ -17,9 +18,9 @@ export function Hero({
 }) {
   if (!repo) {
     return (
-      <section className="border border-line bg-panel px-4 py-8 md:px-8">
+      <section className="hero-panel border border-line bg-panel px-4 py-8 md:px-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-gold">The story</p>
-        <h1 className="mt-3 font-display text-3xl leading-tight text-paper md:text-5xl">
+        <h1 className="hero-headline mt-3 font-display text-3xl leading-tight text-paper md:text-5xl">
           The tape is quiet.
         </h1>
         <p className="mt-3 max-w-xl text-sm text-mute">
@@ -34,9 +35,12 @@ export function Hero({
   const href = `${basePath}${queryString(filters, { repo: repo.fullName })}`;
 
   return (
-    <section className="relative overflow-hidden border border-line bg-panel">
-      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gold/10 blur-3xl" aria-hidden />
-      <div className="px-4 py-6 md:px-8 md:py-8">
+    <section className="hero-panel relative overflow-hidden border border-line bg-panel">
+      <div
+        className="hero-orb absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gold/10 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative px-4 py-6 md:px-8 md:py-8">
         <div className="flex items-center justify-between gap-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-gold">The story</p>
           <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
@@ -47,7 +51,7 @@ export function Hero({
           <p className="font-mono text-xs text-mute">
             {repo.owner}/<span className="text-paper-dim">{repo.name}</span>
           </p>
-          <h1 className="mt-1 font-display text-[2rem] leading-[1.1] tracking-tight text-paper sm:text-4xl md:text-5xl">
+          <h1 className="hero-headline mt-1 font-display text-[2rem] leading-[1.1] tracking-tight text-paper sm:text-4xl md:text-5xl">
             {headline(repo, window)}
           </h1>
         </Link>
@@ -58,14 +62,22 @@ export function Hero({
         ) : null}
 
         <div className="mt-6 grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
-          <Stat k="Stars" v={compactNumber(repo.stars)} />
+          <Stat k="Stars" value={repo.stars} kind="compact" delay={0} />
           <Stat
             k={`${window} velocity`}
-            v={signedNumber(repo.starsAdded)}
+            value={repo.starsAdded}
+            kind="signed"
             tone={repo.starsAdded && repo.starsAdded > 0 ? "mint" : undefined}
+            delay={90}
           />
-          <Stat k="% change" v={pct(repo.pctChange)} tone={repo.pctChange && repo.pctChange > 0 ? "mint" : undefined} />
-          <Stat k="Heat" v={String(repo.heat)} gold />
+          <Stat
+            k="% change"
+            value={repo.pctChange}
+            kind="pct"
+            tone={repo.pctChange && repo.pctChange > 0 ? "mint" : undefined}
+            delay={180}
+          />
+          <Stat k="Heat" value={repo.heat} kind="int" gold delay={270} />
         </div>
 
         {spark.length >= 2 ? (
@@ -83,14 +95,18 @@ export function Hero({
 
 function Stat({
   k,
-  v,
+  value,
+  kind,
   gold,
   tone,
+  delay = 0,
 }: {
   k: string;
-  v: string;
+  value: number | null | undefined;
+  kind: "compact" | "signed" | "pct" | "int";
   gold?: boolean;
   tone?: "mint";
+  delay?: number;
 }) {
   return (
     <div className="bg-ink-2 px-3 py-3 md:px-4 md:py-4">
@@ -100,7 +116,7 @@ function Stat({
           gold ? "text-gold" : tone === "mint" ? "text-mint" : "text-paper"
         }`}
       >
-        {v}
+        <CountUp value={value} kind={kind} delay={delay} duration={800} />
       </p>
     </div>
   );

@@ -32,7 +32,7 @@ export default async function ReposPage({
         </div>
       ) : null}
       {repos.length ? (
-        <div className="grid gap-3">
+        <div className="reveal-list grid gap-3">
           {repos.map((repo) => (
             <RepoCard key={repo.id} repo={repo} filters={filters} basePath="/repos" />
           ))}

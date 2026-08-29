@@ -1,9 +1,11 @@
 import { Hero } from "@/components/hero/Hero";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { HeatBarChart, LanguageChart, VelocityAreaChart } from "@/components/charts/Charts";
+import { Heatmap } from "@/components/charts/Heatmap";
 import { MoversBoard } from "@/components/charts/MoversBoard";
 import { RepoCard } from "@/components/repos/RepoCard";
 import { RepoSheet } from "@/components/repos/RepoSheet";
+import { Ticker } from "@/components/motion/Ticker";
 import { SectionHead, SourceBanner, UpdatedStamp, EmptyNote } from "@/components/ui/Meta";
 import { loadPage } from "@/lib/page-data";
 import { rangeLabel } from "@/lib/format";
@@ -30,6 +32,8 @@ export default async function HomePage({
       </div>
 
       <FilterBar filters={filters} snapshot={snapshot} basePath="/" />
+
+      <Ticker repos={repos} />
 
       <Hero repo={hero} rangeLabel={window} filters={filters} />
 
@@ -73,6 +77,15 @@ export default async function HomePage({
       </div>
 
       <section>
+        <SectionHead kicker="Activity" title="Heatmap" />
+        {repos.length ? (
+          <Heatmap repos={repos} />
+        ) : (
+          <EmptyNote>No repos to map for this filter.</EmptyNote>
+        )}
+      </section>
+
+      <section>
         <SectionHead kicker="Board" title="Movers" />
         <MoversBoard repos={repos} filters={filters} basePath="/" />
       </section>
@@ -82,7 +95,7 @@ export default async function HomePage({
           <span className="font-mono text-[11px] text-mute">{repos.length}</span>
         } />
         {repos.length ? (
-          <div className="grid gap-3">
+          <div className="reveal-list grid gap-3">
             {repos.slice(0, 12).map((repo) => (
               <RepoCard key={repo.id} repo={repo} filters={filters} basePath="/" />
             ))}

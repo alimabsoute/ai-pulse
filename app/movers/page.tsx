@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { MoversBoard } from "@/components/charts/MoversBoard";
 import { VelocityAreaChart } from "@/components/charts/Charts";
+import { Heatmap } from "@/components/charts/Heatmap";
 import { RepoSheet } from "@/components/repos/RepoSheet";
+import { Ticker } from "@/components/motion/Ticker";
 import { SectionHead, SourceBanner, UpdatedStamp, EmptyNote } from "@/components/ui/Meta";
 import { loadPage } from "@/lib/page-data";
 
@@ -33,6 +35,7 @@ export default async function MoversPage({
         </div>
       </div>
       <FilterBar filters={filters} snapshot={snapshot} basePath="/movers" />
+      <Ticker repos={repos} />
       {repos.some((r) => r.velocity.length >= 2) ? (
         <div className="border border-line bg-panel p-3 md:p-4">
           <VelocityAreaChart repos={repos} />
@@ -40,6 +43,7 @@ export default async function MoversPage({
       ) : (
         <EmptyNote>Need overlapping trending windows to draw velocity over time.</EmptyNote>
       )}
+      {repos.length ? <Heatmap repos={repos} /> : null}
       <MoversBoard repos={repos} filters={filters} basePath="/movers" />
       {selected ? <RepoSheet repo={selected} closeHref={closeHref("/movers")} /> : null}
     </div>

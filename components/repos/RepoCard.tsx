@@ -31,7 +31,9 @@ export function RepoCard({
           <h3 className="truncate font-display text-xl text-paper">{repo.name}</h3>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-mono text-lg tabular text-gold">{repo.heat}</p>
+          <p className={`font-mono text-lg tabular text-gold ${repo.heat >= 80 ? "heat-glow" : ""}`}>
+            {repo.heat}
+          </p>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute">heat</p>
         </div>
       </div>
