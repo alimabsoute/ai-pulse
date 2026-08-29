@@ -7,6 +7,8 @@ import { SectionHead, SourceBanner, UpdatedStamp, EmptyNote } from "@/components
 import { loadPage } from "@/lib/page-data";
 
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
 export const revalidate = 600;
 export const metadata: Metadata = { title: "Repos" };
 

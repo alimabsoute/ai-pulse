@@ -5,6 +5,8 @@ import { SectionHead, SourceBanner, UpdatedStamp } from "@/components/ui/Meta";
 import { loadPage } from "@/lib/page-data";
 
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
 export const revalidate = 600;
 export const metadata: Metadata = { title: "AI radar" };
 

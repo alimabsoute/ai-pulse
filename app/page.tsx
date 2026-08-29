@@ -11,6 +11,8 @@ import { loadPage } from "@/lib/page-data";
 import { rangeLabel } from "@/lib/format";
 
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
 export const revalidate = 600;
 
 export default async function HomePage({

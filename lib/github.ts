@@ -21,6 +21,41 @@ type RawRepo = {
 
 const WINDOW_DAYS: Record<"1d" | "7d" | "30d", number> = { "1d": 1, "7d": 7, "30d": 30 };
 
+const SKIP_OWNERS = new Set([
+  "trending",
+  "topics",
+  "search",
+  "settings",
+  "login",
+  "orgs",
+  "users",
+  "explore",
+  "sponsors",
+  "about",
+  "pricing",
+  "features",
+  "enterprise",
+  "marketplace",
+  "collections",
+  "events",
+  "codespaces",
+  "copilot",
+  "security",
+  "blog",
+  "site",
+  "apps",
+  "notifications",
+  "pulls",
+  "issues",
+  "gist",
+  "solutions",
+  "resources",
+  "open-source",
+  "customer-stories",
+  "organizations",
+  "account",
+]);
+
 function windowKey(range: RangeKey): "1d" | "7d" | "30d" {
   if (range === "today") return "1d";
   if (range === "7d") return "7d";
@@ -69,6 +104,19 @@ function mergeInto(target: Map<string, RawRepo>, incoming: RawRepo) {
   incoming.source.forEach((s) => prev.source.add(s));
 }
 
+function parseFigure(raw: string | undefined | null): number | null {
+  if (!raw) return null;
+  const s = raw.trim().replace(/,/g, "");
+  const m = s.match(/^([\d.]+)\s*([kKmM])?$/);
+  if (!m) return parseCount(raw);
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const suf = (m[2] || "").toLowerCase();
+  if (suf === "k") return Math.round(n * 1000);
+  if (suf === "m") return Math.round(n * 1_000_000);
+  return n;
+}
+
 export function parseTrendingHtml(html: string, window: "1d" | "7d" | "30d"): RawRepo[] {
   const $ = cheerio.load(html);
   const out: RawRepo[] = [];
@@ -97,6 +145,70 @@ export function parseTrendingHtml(html: string, window: "1d" | "7d" | "30d"): Ra
     raw.source.add("trending");
     out.push(raw);
   });
+  return out;
+}
+
+/** Parse jina.ai reader markdown of github.com/trending. Never invents star counts. */
+export function parseTrendingMarkdown(md: string, window: "1d" | "7d" | "30d"): RawRepo[] {
+  const linkRe =
+    /\[([A-Za-z0-9_.-]+)\s*\/\s*([A-Za-z0-9_.-]+)\]\(https?:\/\/github\.com\/\1\/\2(?:\/)?(?:[?#][^)]*)?\)/gi;
+  const matches: Array<{ owner: string; name: string; index: number }> = [];
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(md))) {
+    const owner = m[1];
+    const name = m[2];
+    if (SKIP_OWNERS.has(owner.toLowerCase())) continue;
+    if (/^(stargazers|forks|network|issues|pulls|actions|security|pulse)$/i.test(name)) continue;
+    const key = `${owner}/${name}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    matches.push({ owner, name, index: m.index });
+  }
+
+  const out: RawRepo[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const { owner, name, index } = matches[i];
+    const end = i + 1 < matches.length ? matches[i + 1].index : Math.min(index + 1800, md.length);
+    const block = md.slice(index, end);
+    const raw = emptyRaw(owner, name);
+
+    const starLink = block.match(
+      /\[([^\]]+)\]\(https?:\/\/github\.com\/[^)]+\/stargazers\)/,
+    );
+    const forkLink = block.match(
+      /\[([^\]]+)\]\(https?:\/\/github\.com\/[^)]+\/(?:network\/members|forks)\)/,
+    );
+    const stars = starLink ? parseFigure(starLink[1]) : null;
+    const forks = forkLink ? parseFigure(forkLink[1]) : null;
+    if (stars !== null) raw.stars = stars;
+    if (forks !== null) raw.forks = forks;
+
+    const velMatch = block
+      .replace(/\s+/g, " ")
+      .match(/([\d,]+)\s+stars\s+(today|this week|this month)/i);
+    if (velMatch) {
+      const added = parseCount(velMatch[1]);
+      if (added !== null) raw.starsAdded[window] = added;
+    }
+
+    const lines = block
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    for (const line of lines.slice(1, 10)) {
+      if (line.startsWith("[") || line.startsWith("#") || line.startsWith("!")) continue;
+      if (/stars\s+(today|this week|this month)/i.test(line)) continue;
+      const text = line.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\s+/g, " ").trim();
+      if (text.length > 12) {
+        raw.description = text;
+        break;
+      }
+    }
+
+    raw.source.add("trending");
+    out.push(raw);
+  }
   return out;
 }
 
@@ -133,54 +245,130 @@ function fromSearch(item: GhSearchItem): RawRepo | null {
   return raw;
 }
 
+function isTrendingHtml(html: string): boolean {
+  return html.includes("article") && html.includes("Box-row");
+}
+
 async function fetchTrendingWindow(
   window: "1d" | "7d" | "30d",
 ): Promise<{ repos: RawRepo[]; status: SourceStatus }> {
   const since = window === "1d" ? "daily" : window === "7d" ? "weekly" : "monthly";
   const url = `https://github.com/trending?since=${since}`;
   const res = await fetchText(url);
-  if (!res.ok) {
+  let repos: RawRepo[] = [];
+  let statusCode = res.status;
+  let error: string | undefined;
+
+  if (res.ok) {
+    if (!isTrendingHtml(res.data)) {
+      error = "block_page";
+    } else {
+      repos = parseTrendingHtml(res.data, window);
+      if (repos.length === 0) error = "empty_trending";
+    }
+  } else {
+    error = res.error;
+  }
+
+  if (repos.length === 0) {
+    const proxyUrl = `https://r.jina.ai/http://github.com/trending?since=${since}`;
+    const proxy = await fetchText(proxyUrl);
+    if (proxy.ok) {
+      const fromMd = parseTrendingMarkdown(proxy.data, window);
+      if (fromMd.length > 0) {
+        repos = fromMd;
+        statusCode = proxy.status;
+        error = undefined;
+      } else {
+        error = error ?? "empty_proxy";
+        statusCode = statusCode || proxy.status;
+      }
+    } else {
+      error = error ?? proxy.error;
+      statusCode = statusCode || proxy.status;
+    }
+  }
+
+  if (repos.length === 0) {
     return {
       repos: [],
       status: {
         id: "github-trending",
         ok: false,
-        status: res.status,
-        error: res.error,
+        status: statusCode,
+        error: error ?? "empty_trending",
         count: 0,
       },
     };
   }
-  const repos = parseTrendingHtml(res.data, window);
+
   return {
     repos,
-    status: { id: "github-trending", ok: true, status: res.status, count: repos.length },
+    status: { id: "github-trending", ok: true, status: statusCode, count: repos.length },
   };
 }
 
-async function fetchAiSearch(range: RangeKey): Promise<{ repos: RawRepo[]; status: SourceStatus }> {
-  const days = range === "today" ? 7 : range === "7d" ? 14 : 30;
-  const since = isoDateDaysAgo(days);
-  // GitHub Search rejects OR across qualifiers (422). A single topic qualifier is valid.
-  const q = encodeURIComponent(`topic:ai created:>${since}`);
+async function fetchRepoSearch(
+  query: string,
+): Promise<{ repos: RawRepo[]; ok: boolean; status: number; error?: string }> {
+  const q = encodeURIComponent(query);
   const url = `https://api.github.com/search/repositories?q=${q}&sort=stars&order=desc&per_page=30`;
   const res = await fetchJson<GhSearchResponse>(url, { github: true });
   if (!res.ok) {
+    return { repos: [], ok: false, status: res.status, error: res.error };
+  }
+  const repos = (res.data.items ?? []).map(fromSearch).filter((r): r is RawRepo => r !== null);
+  return { repos, ok: true, status: res.status };
+}
+
+function searchDays(range: RangeKey): number {
+  if (range === "today") return 7;
+  if (range === "7d") return 14;
+  return 30;
+}
+
+async function fetchAiSearch(range: RangeKey): Promise<{ repos: RawRepo[]; status: SourceStatus }> {
+  const since = isoDateDaysAgo(searchDays(range));
+  // GitHub Search rejects OR across qualifiers (422). A single topic qualifier is valid.
+  const result = await fetchRepoSearch(`topic:ai created:>${since}`);
+  if (!result.ok) {
     return {
       repos: [],
       status: {
         id: "github-search",
         ok: false,
-        status: res.status,
-        error: res.error,
+        status: result.status,
+        error: result.error,
         count: 0,
       },
     };
   }
-  const repos = (res.data.items ?? []).map(fromSearch).filter((r): r is RawRepo => r !== null);
   return {
-    repos,
-    status: { id: "github-search", ok: true, status: res.status, count: repos.length },
+    repos: result.repos,
+    status: { id: "github-search", ok: true, status: result.status, count: result.repos.length },
+  };
+}
+
+async function fetchPopularPushedSearch(
+  range: RangeKey,
+): Promise<{ repos: RawRepo[]; status: SourceStatus }> {
+  const since = isoDateDaysAgo(searchDays(range));
+  const result = await fetchRepoSearch(`stars:>1000 pushed:>${since}`);
+  if (!result.ok) {
+    return {
+      repos: [],
+      status: {
+        id: "github-search",
+        ok: false,
+        status: result.status,
+        error: result.error,
+        count: 0,
+      },
+    };
+  }
+  return {
+    repos: result.repos,
+    status: { id: "github-search", ok: true, status: result.status, count: result.repos.length },
   };
 }
 
@@ -238,8 +426,18 @@ export async function loadGithub(range: RangeKey): Promise<{
     ...otherWindows.map(fetchTrendingWindow),
   ]);
 
+  const trendingParts = [primary, ...others];
+  const trendingCount = trendingParts.reduce((n, s) => n + s.repos.length, 0);
+
+  let extra: { repos: RawRepo[]; status: SourceStatus } | null = null;
+  if (trendingCount === 0) {
+    extra = await fetchPopularPushedSearch(range);
+  }
+
   const map = new Map<string, RawRepo>();
-  for (const bundle of [primary, ...others, search]) {
+  for (const bundle of [primary, ...others, search, extra].filter(Boolean) as Array<{
+    repos: RawRepo[];
+  }>) {
     for (const r of bundle.repos) mergeInto(map, r);
   }
 
@@ -251,10 +449,12 @@ export async function loadGithub(range: RangeKey): Promise<{
     r.rank = i + 1;
   });
 
-  const trendingParts = [primary, ...others];
   const trendingOk = trendingParts.some((s) => s.status.ok);
-  const trendingCount = trendingParts.reduce((n, s) => n + s.status.count, 0);
   const trendingFail = trendingParts.find((s) => !s.status.ok)?.status;
+
+  const searchOk = search.status.ok || Boolean(extra?.status.ok);
+  const searchCount = search.status.count + (extra?.status.count ?? 0);
+  const searchFail = search.status.ok ? extra?.status : search.status;
 
   const sources: SourceStatus[] = [
     {
@@ -264,7 +464,13 @@ export async function loadGithub(range: RangeKey): Promise<{
       error: trendingOk ? undefined : trendingFail?.error,
       count: trendingCount,
     },
-    search.status,
+    {
+      id: "github-search",
+      ok: searchOk,
+      status: searchOk ? 200 : searchFail?.status,
+      error: searchOk ? undefined : searchFail?.error,
+      count: searchCount,
+    },
   ];
 
   return { repos: merged, sources };
