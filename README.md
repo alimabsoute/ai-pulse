@@ -7,9 +7,9 @@ Bloomberg-terminal energy, editorial magazine type. Numbers are the main charact
 ## What you get
 
 - **Hero of the moment** — hottest repo / biggest mover, with stars, window velocity, % change, and heat (0-100).
-- **Trending GitHub repos** — name, description, language, stars, forks, star velocity, sparkline, topics/signals, heat. Tap for a detail sheet (bottom sheet on mobile, side panel on desktop).
+- **Trending GitHub repos** — name, description, language, stars, forks, star velocity, sparkline, topics/signals, heat, GitHub OG thumbnail. Tap opens a split workspace: media canvas (screenshots, videos, conversation) on the left, stats on the right. Mobile keeps a bottom sheet with a media strip.
 - **AI radar** — Hugging Face models / datasets / spaces and arXiv cs.AI.
-- **Charts** — ranked heat bars, velocity area (daily star rate across 30d / 7d / 1d windows), language mix, movers board (absolute and percent).
+- **Tape / Charts** — default home is a visual product shelf plus the tape. Charts (heat bars, velocity, languages, heatmap, movers) live in a secondary Charts tab.
 - **Filters** — today / 7d / 30d, topic chips, language chips.
 - **PWA** — installable, `manifest.webmanifest`, theme color, apple-mobile-web-app-capable, offline shell service worker, safe-area insets.
 
@@ -22,7 +22,7 @@ Bloomberg-terminal energy, editorial magazine type. Numbers are the main charact
 | [Hugging Face API](https://huggingface.co/api/models) | Models, datasets, spaces sorted by likes. Downloads/likes when present. |
 | [arXiv API](http://export.arxiv.org/api/query) | Latest `cat:cs.AI` submissions. |
 
-Requests use Next.js `fetch` with a 10-minute revalidate window and `unstable_cache`. HTTP 403 / 429 are treated as rate limits; the UI shows a degraded banner instead of fake numbers. The client also refreshes the route every 10 minutes.
+Requests use Next.js `fetch` with a 24-hour revalidate window and `unstable_cache`. HTTP 403 / 429 are treated as rate limits; the UI shows a degraded banner instead of fake numbers.
 
 ### Heat score
 
@@ -66,7 +66,7 @@ GITHUB_TOKEN=ghp_your_token_here
 
 | Path | |
 | --- | --- |
-| `/` | Home — story, charts, feed |
+| `/` | Home — story, product shelf, tape / charts |
 | `/repos` | Full trending list |
 | `/ai` | Hugging Face + arXiv |
 | `/movers` | Absolute and percent movers |
