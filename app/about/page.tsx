@@ -60,9 +60,9 @@ export default function AboutPage() {
       <section>
         <h3 className="font-display text-2xl text-paper">Refresh</h3>
         <p className="mt-2 text-sm leading-relaxed text-paper-dim">
-          Server fetches are cached for 10 minutes (Next.js fetch cache + unstable_cache). The
-          client also calls router.refresh on that cadence. 403 and 429 responses are treated as
-          rate limits and surface as a degraded banner.
+          Server fetches are cached for 24 hours (Next.js fetch cache + unstable_cache). Pulse
+          revalidates daily. 403 and 429 responses are treated as rate limits and surface as a
+          degraded banner.
         </p>
       </section>
 

@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { HeatBarChart } from "@/components/charts/Charts";
 import { RepoCard } from "@/components/repos/RepoCard";
-import { RepoSheet } from "@/components/repos/RepoSheet";
+import { RepoWorkspace } from "@/components/repos/RepoWorkspace";
 import { SectionHead, SourceBanner, UpdatedStamp, EmptyNote } from "@/components/ui/Meta";
 import { loadPage } from "@/lib/page-data";
 
-
 export const runtime = "nodejs";
 export const maxDuration = 60;
-export const revalidate = 600;
+export const revalidate = 86400;
 export const metadata: Metadata = { title: "Repos" };
 
 export default async function ReposPage({
@@ -18,6 +17,9 @@ export default async function ReposPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { filters, snapshot, repos, selected, closeHref } = await loadPage(searchParams);
+  if (selected) {
+    return <RepoWorkspace repo={selected} closeHref={closeHref("/repos")} />;
+  }
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -42,7 +44,6 @@ export default async function ReposPage({
       ) : (
         <EmptyNote>No repositories for this filter. Sources may be rate-limited.</EmptyNote>
       )}
-      {selected ? <RepoSheet repo={selected} closeHref={closeHref("/repos")} /> : null}
     </div>
   );
 }

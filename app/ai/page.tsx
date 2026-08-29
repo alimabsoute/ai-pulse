@@ -7,7 +7,7 @@ import { loadPage } from "@/lib/page-data";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-export const revalidate = 600;
+export const revalidate = 86400;
 export const metadata: Metadata = { title: "AI radar" };
 
 export default async function AiPage({
