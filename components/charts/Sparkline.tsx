@@ -36,6 +36,8 @@ export function Sparkline({
         strokeWidth="1.6"
         strokeLinejoin="round"
         strokeLinecap="round"
+        pathLength={1}
+        className="spark-draw"
       />
     </svg>
   );
