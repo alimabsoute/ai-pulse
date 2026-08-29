@@ -11,7 +11,7 @@ const DESKTOP = [
 export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
         <Link href="/" className="group flex min-h-11 items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-sm border border-gold/40 bg-gold/10 font-mono text-[11px] font-semibold tracking-[0.18em] text-gold">
             P

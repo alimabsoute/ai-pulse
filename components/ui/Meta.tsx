@@ -5,7 +5,7 @@ import { formatStamp } from "@/lib/format";
 export function UpdatedStamp({ iso }: { iso: string }) {
   return (
     <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
-      As of {formatStamp(iso)} · revalidates every 10 min
+      As of {formatStamp(iso)} · revalidates daily
     </p>
   );
 }
