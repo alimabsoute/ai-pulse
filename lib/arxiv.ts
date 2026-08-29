@@ -18,7 +18,7 @@ function allTags(xml: string, name: string): string[] {
 
 export async function loadArxiv(): Promise<{ papers: Paper[]; status: SourceStatus }> {
   const url =
-    "http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=8&sortBy=submittedDate&sortOrder=descending";
+    "https://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=8&sortBy=submittedDate&sortOrder=descending";
   const res = await fetchText(url, {
     headers: { Accept: "application/atom+xml,application/xml,text/xml" },
   });
