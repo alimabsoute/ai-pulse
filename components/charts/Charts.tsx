@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import {
   Bar,
   BarChart,
@@ -18,6 +19,52 @@ const GOLD = "#f0a202";
 const MUTE = "#8b90a0";
 const MINT = "#3ddc97";
 const PAPER = "#f3ead8";
+const DURATION = 700;
+
+function usePrefersReducedMotion(): boolean {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduce(mq.matches);
+    const on = () => setReduce(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return reduce;
+}
+
+function ChartBox({
+  className,
+  children,
+}: {
+  className: string;
+  children: ReactElement;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => {
+      if (el.clientWidth > 0) setReady(true);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={className}>
+      {ready ? (
+        <ResponsiveContainer width="100%" height="100%">
+          {children}
+        </ResponsiveContainer>
+      ) : null}
+    </div>
+  );
+}
 
 function Tip({
   active,
@@ -42,6 +89,7 @@ function Tip({
 }
 
 export function HeatBarChart({ repos }: { repos: Repo[] }) {
+  const reduce = usePrefersReducedMotion();
   const data = repos.slice(0, 10).map((r) => ({
     name: r.name.length > 16 ? `${r.name.slice(0, 15)}…` : r.name,
     heat: r.heat,
@@ -49,30 +97,32 @@ export function HeatBarChart({ repos }: { repos: Repo[] }) {
   }));
   if (!data.length) return null;
   return (
-    <div className="h-64 w-full min-w-0 sm:h-72">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#232836" />
-          <XAxis type="number" domain={[0, 100]} tick={{ fill: MUTE, fontSize: 11 }} />
-          <YAxis
-            type="category"
-            dataKey="name"
-            width={92}
-            tick={{ fill: PAPER, fontSize: 11 }}
-          />
-          <Tooltip content={<Tip />} cursor={{ fill: "rgba(240,162,2,0.08)" }} />
-          <Bar dataKey="heat" name="heat" radius={[0, 4, 4, 0]} barSize={14}>
-            {data.map((d) => (
-              <Cell key={d.name} fill={d.heat >= 80 ? GOLD : d.heat >= 55 ? "#c48902" : "#6b5a2a"} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ChartBox className="h-64 w-full min-w-0 sm:h-72">
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#232836" />
+        <XAxis type="number" domain={[0, 100]} tick={{ fill: MUTE, fontSize: 11 }} />
+        <YAxis type="category" dataKey="name" width={92} tick={{ fill: PAPER, fontSize: 11 }} />
+        <Tooltip content={<Tip />} cursor={{ fill: "rgba(240,162,2,0.08)" }} />
+        <Bar
+          dataKey="heat"
+          name="heat"
+          radius={[0, 4, 4, 0]}
+          barSize={14}
+          isAnimationActive={!reduce}
+          animationDuration={DURATION}
+          animationEasing="ease-out"
+        >
+          {data.map((d) => (
+            <Cell key={d.name} fill={d.heat >= 80 ? GOLD : d.heat >= 55 ? "#c48902" : "#6b5a2a"} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ChartBox>
   );
 }
 
 export function VelocityAreaChart({ repos }: { repos: Repo[] }) {
+  const reduce = usePrefersReducedMotion();
   const series = repos.filter((r) => r.velocity.length >= 2).slice(0, 5);
   if (!series.length) return null;
   const windows = ["30d", "7d", "1d"] as const;
@@ -86,28 +136,29 @@ export function VelocityAreaChart({ repos }: { repos: Repo[] }) {
   });
   const colors = [GOLD, MINT, "#7aa2ff", "#ff5c5c", "#e0d0a8"];
   return (
-    <div className="h-56 w-full min-w-0 sm:h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#232836" />
-          <XAxis dataKey="window" tick={{ fill: MUTE, fontSize: 11 }} />
-          <YAxis tick={{ fill: MUTE, fontSize: 11 }} width={40} />
-          <Tooltip content={<Tip />} />
-          {series.map((r, i) => (
-            <Area
-              key={r.id}
-              type="monotone"
-              dataKey={r.name}
-              stroke={colors[i % colors.length]}
-              fill={colors[i % colors.length]}
-              fillOpacity={0.12}
-              strokeWidth={2}
-              connectNulls
-            />
-          ))}
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <ChartBox className="h-56 w-full min-w-0 sm:h-64">
+      <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#232836" />
+        <XAxis dataKey="window" tick={{ fill: MUTE, fontSize: 11 }} />
+        <YAxis tick={{ fill: MUTE, fontSize: 11 }} width={40} />
+        <Tooltip content={<Tip />} />
+        {series.map((r, i) => (
+          <Area
+            key={r.id}
+            type="monotone"
+            dataKey={r.name}
+            stroke={colors[i % colors.length]}
+            fill={colors[i % colors.length]}
+            fillOpacity={0.12}
+            strokeWidth={2}
+            connectNulls
+            isAnimationActive={!reduce}
+            animationDuration={DURATION}
+            animationEasing="ease-out"
+          />
+        ))}
+      </AreaChart>
+    </ChartBox>
   );
 }
 
@@ -116,6 +167,7 @@ export function LanguageChart({
 }: {
   languages: { name: string; count: number; stars: number }[];
 }) {
+  const reduce = usePrefersReducedMotion();
   const data = languages.slice(0, 8).map((l) => ({
     name: l.name,
     repos: l.count,
@@ -123,16 +175,30 @@ export function LanguageChart({
   }));
   if (!data.length) return null;
   return (
-    <div className="h-56 w-full min-w-0 sm:h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#232836" />
-          <XAxis dataKey="name" tick={{ fill: MUTE, fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={40} />
-          <YAxis tick={{ fill: MUTE, fontSize: 11 }} width={36} />
-          <Tooltip content={<Tip />} cursor={{ fill: "rgba(240,162,2,0.08)" }} />
-          <Bar dataKey="repos" name="repos" fill={GOLD} radius={[3, 3, 0, 0]} barSize={18} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ChartBox className="h-56 w-full min-w-0 sm:h-64">
+      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#232836" />
+        <XAxis
+          dataKey="name"
+          tick={{ fill: MUTE, fontSize: 10 }}
+          interval={0}
+          angle={-25}
+          textAnchor="end"
+          height={40}
+        />
+        <YAxis tick={{ fill: MUTE, fontSize: 11 }} width={36} />
+        <Tooltip content={<Tip />} cursor={{ fill: "rgba(240,162,2,0.08)" }} />
+        <Bar
+          dataKey="repos"
+          name="repos"
+          fill={GOLD}
+          radius={[3, 3, 0, 0]}
+          barSize={18}
+          isAnimationActive={!reduce}
+          animationDuration={DURATION}
+          animationEasing="ease-out"
+        />
+      </BarChart>
+    </ChartBox>
   );
 }
