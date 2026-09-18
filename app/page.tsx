@@ -7,6 +7,7 @@ import { RepoCard } from "@/components/repos/RepoCard";
 import { RepoWorkspace } from "@/components/repos/RepoWorkspace";
 import { ProductRow } from "@/components/repos/ProductRow";
 import { TapeCharts } from "@/components/home/TapeCharts";
+import { SignupBar } from "@/components/home/SignupBar";
 import { Ticker } from "@/components/motion/Ticker";
 import { SectionHead, SourceBanner, UpdatedStamp, EmptyNote } from "@/components/ui/Meta";
 import { loadPage } from "@/lib/page-data";
@@ -35,6 +36,8 @@ export default async function HomePage({
 
   return (
     <div className="flex flex-col gap-8">
+      <SignupBar />
+
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <UpdatedStamp iso={snapshot.fetchedAt} />
         <SourceBanner sources={snapshot.sources} />
