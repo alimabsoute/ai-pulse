@@ -142,7 +142,7 @@ function Row({
             aria-label={text}
             onClick={() => onTip(text)}
             onFocus={() => onTip(text)}
-            className="h-7 min-h-7 rounded-[2px] border border-line/80 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-gold"
+            className="h-11 min-h-11 md:h-7 md:min-h-7 rounded-[2px] border border-line/80 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-gold"
             style={{ background: missing ? "var(--ink-2)" : goldFill(t) }}
           />
         );
