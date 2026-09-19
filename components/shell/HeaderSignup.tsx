@@ -139,7 +139,7 @@ export function HeaderSignup() {
     return (
       <p
         role="status"
-        className="reveal flex h-11 shrink-0 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-gold md:h-9"
+        className="reveal flex h-[46px] shrink-0 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-gold md:h-9"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2" />
@@ -159,7 +159,7 @@ export function HeaderSignup() {
     >
       <div
         className={
-          "flex h-11 w-[clamp(9rem,46vw,13rem)] items-stretch rounded-sm border bg-ink/60 transition-colors focus-within:border-gold/60 md:h-9 md:w-60 " +
+          "flex h-[46px] w-[clamp(9rem,46vw,13rem)] items-stretch rounded-sm border bg-ink/60 transition-colors focus-within:border-gold/60 md:h-9 md:w-60 " +
           (status === "error" ? "border-rose/60" : "border-line-2")
         }
       >

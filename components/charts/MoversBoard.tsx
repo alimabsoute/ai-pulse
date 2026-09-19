@@ -28,7 +28,7 @@ export function MoversBoard({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <Column
         title="Absolute"
         subtitle="Stars added"

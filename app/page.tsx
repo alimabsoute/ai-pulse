@@ -62,7 +62,7 @@ export default async function HomePage({
                 title="Trending repos"
                 aside={<span className="font-mono text-[11px] text-mute">{repos.length}</span>}
               />
-              <div className="reveal-list grid gap-3">
+              <div className="reveal-list grid grid-cols-1 gap-3">
                 {repos.slice(0, 12).map((repo) => (
                   <RepoCard key={repo.id} repo={repo} filters={filters} basePath="/" />
                 ))}
@@ -85,7 +85,7 @@ export default async function HomePage({
               )}
             </section>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <section>
                 <SectionHead kicker="Velocity" title="Star rate" />
                 {repos.some((r) => r.velocity.length >= 2) ? (
