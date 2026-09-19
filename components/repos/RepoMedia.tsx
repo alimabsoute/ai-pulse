@@ -101,7 +101,7 @@ function ClipsBlock({ media }: { media: RepoMedia }) {
         Videos of what it&apos;s doing
       </p>
       {media.clips.length ? (
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3">
           {media.clips.map((clip) => (
             <div key={clip.id} className="border border-line bg-ink-2">
               <iframe

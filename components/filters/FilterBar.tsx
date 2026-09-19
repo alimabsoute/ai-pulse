@@ -2,8 +2,8 @@ import type { Filters, Snapshot } from "@/lib/types";
 import { queryString, TOPIC_CHIPS } from "@/lib/pulse";
 import { FilterDisclosure, type FilterGroup, type FilterOption } from "./FilterDisclosure";
 
-const RANGES: Array<{ id: Filters["range"]; label: string }> = [
-  { id: "today", label: "Today" },
+const RANGES: Array<{ id: Filters["range"]; label: string; short?: string }> = [
+  { id: "today", label: "Today", short: "24h" },
   { id: "7d", label: "7d" },
   { id: "30d", label: "30d" },
 ];
@@ -20,6 +20,7 @@ export function FilterBar({
   const ranges: FilterOption[] = RANGES.map((r) => ({
     id: r.id,
     label: r.label,
+    short: r.short,
     href: `${basePath}${queryString(filters, { range: r.id })}`,
     active: filters.range === r.id,
   }));

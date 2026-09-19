@@ -67,7 +67,7 @@ export default function AboutPage() {
       </section>
 
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
-        <Link href="/" className="text-gold">
+        <Link href="/" className="inline-flex min-h-11 items-center text-gold">
           Back to the tape
         </Link>
       </p>

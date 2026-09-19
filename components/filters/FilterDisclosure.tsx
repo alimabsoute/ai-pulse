@@ -10,6 +10,8 @@ export type FilterOption = {
   href: string;
   active: boolean;
   count?: number;
+  /** Shorter label for phones. */
+  short?: string;
 };
 
 export type FilterGroup = {
@@ -55,7 +57,7 @@ export function FilterDisclosure({
   }
 
   const cell =
-    "items-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors";
+    "items-center font-mono text-[11px] uppercase tracking-[0.04em] transition-colors sm:tracking-[0.12em]";
   const on = "bg-gold/10 text-gold shadow-[inset_0_-2px_0_var(--gold)]";
 
   return (
@@ -75,7 +77,14 @@ export function FilterDisclosure({
                 r.active ? on : "text-paper-dim hover:bg-panel-2 hover:text-paper",
               )}
             >
-              {r.label}
+              {r.short ? (
+                <>
+                  <span className="sm:hidden">{r.short}</span>
+                  <span className="hidden sm:inline">{r.label}</span>
+                </>
+              ) : (
+                r.label
+              )}
             </Link>
           ))}
         </div>
@@ -92,12 +101,12 @@ export function FilterDisclosure({
               onClick={() => toggle(g.id)}
               className={cls(
                 cell,
-                "inline-flex min-w-0 flex-auto justify-between gap-1.5 px-2.5 sm:flex-none sm:justify-start sm:gap-2 sm:border-r sm:border-line sm:px-3",
+                "inline-flex min-w-0 flex-auto justify-between gap-1 px-2 sm:flex-none sm:justify-start sm:gap-2 sm:border-r sm:border-line sm:px-3",
                 expanded ? "bg-panel-2 text-paper" : "text-paper-dim hover:bg-panel-2",
               )}
             >
               {/* Phones show the label until a filter is set, then just the value. */}
-              <span className="flex min-w-0 items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-1 sm:gap-1.5">
                 <span className={cls("text-mute", g.filtered && "hidden sm:inline")}>{g.label}</span>
                 <span
                   className={cls(
