@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { compactNumber, pct, signedNumber } from "@/lib/format";
 
 export type CountKind = "compact" | "signed" | "pct" | "int";
@@ -32,38 +32,50 @@ export function CountUp({
   className?: string;
 }) {
   const empty = value === null || value === undefined || Number.isNaN(value);
-  const [text, setText] = useState(() => (empty ? "—" : formatKind(kind, 0)));
+  // Server-render (and first paint) the real value — never a placeholder 0.
+  // The count animation only runs when the value changes after mount
+  // (e.g. a filter switch), rolling from the previous number to the new one.
+  const [text, setText] = useState(() => (empty ? "—" : formatKind(kind, value)));
+  const shown = useRef<number | null>(empty ? null : value);
 
   useEffect(() => {
     if (value === null || value === undefined || Number.isNaN(value)) {
+      shown.current = null;
       setText("—");
       return;
     }
+    const from = shown.current;
+    const to = value;
+    shown.current = to;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setText(formatKind(kind, value));
+    if (reduce || from === null || from === to) {
+      setText(formatKind(kind, to));
       return;
     }
 
     let raf = 0;
-    let startAt = 0;
     const dur = Math.min(900, Math.max(600, duration));
-    const to = value;
     const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
     const start = () => {
-      startAt = performance.now();
+      const startAt = performance.now();
       const tick = (now: number) => {
         const t = Math.min(1, (now - startAt) / dur);
-        setText(formatKind(kind, to * easeOut(t)));
+        setText(formatKind(kind, from + (to - from) * easeOut(t)));
         if (t < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
     };
 
     const wait = window.setTimeout(start, delay);
+    // rAF is frozen in background tabs — make sure the final value always lands.
+    const settle = window.setTimeout(() => {
+      cancelAnimationFrame(raf);
+      setText(formatKind(kind, to));
+    }, delay + dur + 150);
     return () => {
       window.clearTimeout(wait);
+      window.clearTimeout(settle);
       cancelAnimationFrame(raf);
     };
   }, [value, kind, duration, delay]);

@@ -54,14 +54,15 @@ export function FilterDisclosure({
     }
   }
 
+  const cell =
+    "items-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors";
+  const on = "bg-gold/10 text-gold shadow-[inset_0_-2px_0_var(--gold)]";
+
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div
-          role="group"
-          aria-label="Time range"
-          className="flex w-full rounded-sm border border-line-2 bg-panel p-0.5 sm:w-auto"
-        >
+    <div className="overflow-hidden rounded-sm border border-line bg-panel/60">
+      {/* One toolbar, uniform height: range | topic | lang | reset */}
+      <div className="flex h-11 items-stretch divide-x divide-line sm:h-9">
+        <div role="group" aria-label="Time range" className="flex shrink-0 items-stretch">
           {ranges.map((r) => (
             <Link
               key={r.id}
@@ -69,8 +70,9 @@ export function FilterDisclosure({
               scroll={false}
               aria-current={r.active ? "true" : undefined}
               className={cls(
-                "inline-flex min-h-10 flex-1 items-center justify-center rounded-[1px] px-3 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors sm:min-h-8 sm:flex-none",
-                r.active ? "bg-gold text-ink" : "text-paper-dim hover:text-gold",
+                cell,
+                "inline-flex justify-center px-2 sm:px-3",
+                r.active ? on : "text-paper-dim hover:bg-panel-2 hover:text-paper",
               )}
             >
               {r.label}
@@ -86,29 +88,35 @@ export function FilterDisclosure({
               type="button"
               aria-expanded={expanded}
               aria-controls={panelId}
+              aria-label={`${g.label}: ${g.value}`}
               onClick={() => toggle(g.id)}
               className={cls(
-                "inline-flex min-h-11 flex-1 items-center justify-between gap-2 rounded-sm border px-3 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors sm:min-h-9 sm:flex-none sm:justify-start",
-                expanded
-                  ? "border-gold/60 bg-panel text-paper"
-                  : "border-line-2 bg-panel text-paper-dim hover:border-gold/40",
+                cell,
+                "inline-flex min-w-0 flex-auto justify-between gap-1.5 px-2.5 sm:flex-none sm:justify-start sm:gap-2 sm:border-r sm:border-line sm:px-3",
+                expanded ? "bg-panel-2 text-paper" : "text-paper-dim hover:bg-panel-2",
               )}
             >
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="text-mute">{g.label}</span>
-                <span className={cls("truncate", g.filtered ? "text-gold" : "text-paper")}>
+              {/* Phones show the label until a filter is set, then just the value. */}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className={cls("text-mute", g.filtered && "hidden sm:inline")}>{g.label}</span>
+                <span
+                  className={cls(
+                    "truncate",
+                    g.filtered ? "text-gold" : "hidden text-paper sm:inline",
+                  )}
+                >
                   {g.value}
                 </span>
               </span>
               <svg
-                width="10"
-                height="10"
+                width="9"
+                height="9"
                 viewBox="0 0 10 10"
                 fill="none"
                 aria-hidden="true"
                 className={cls(
-                  "shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  expanded && "rotate-180",
+                  "shrink-0 text-mute transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  expanded && "rotate-180 text-gold",
                 )}
               >
                 <path d="m1.5 3.5 3.5 3.5 3.5-3.5" stroke="currentColor" strokeWidth="1.4" />
@@ -122,7 +130,10 @@ export function FilterDisclosure({
             href={resetHref}
             scroll={false}
             onClick={() => setOpen(false)}
-            className="inline-flex min-h-11 items-center px-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-mute underline-offset-4 transition-colors hover:text-gold hover:underline sm:min-h-9"
+            className={cls(
+              cell,
+              "ml-auto hidden border-l border-line px-3 text-mute hover:bg-panel-2 hover:text-gold sm:inline-flex",
+            )}
           >
             Reset
           </Link>
@@ -143,7 +154,7 @@ export function FilterDisclosure({
               key={group.id}
               role="group"
               aria-label={group.label}
-              className="reveal-list mt-2 flex flex-wrap gap-1 border-l-2 border-gold/50 bg-panel/50 py-1.5 pl-2 pr-1.5"
+              className="reveal-list flex flex-wrap border-t border-line p-1 sm:gap-0.5"
             >
               {group.options.map((o) => (
                 <Link
@@ -153,10 +164,11 @@ export function FilterDisclosure({
                   aria-current={o.active ? "true" : undefined}
                   onClick={() => setOpen(false)}
                   className={cls(
-                    "inline-flex min-h-11 items-center gap-1.5 rounded-sm border px-3 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors sm:min-h-8 sm:px-2.5",
+                    cell,
+                    "inline-flex min-h-11 gap-1.5 rounded-[1px] px-3 sm:min-h-7 sm:px-2.5",
                     o.active
-                      ? "border-gold/50 bg-gold/10 text-gold"
-                      : "border-transparent text-paper-dim hover:text-gold",
+                      ? "bg-gold/10 text-gold"
+                      : "text-paper-dim hover:bg-panel-2 hover:text-paper",
                   )}
                 >
                   {o.label}
@@ -167,6 +179,19 @@ export function FilterDisclosure({
                   ) : null}
                 </Link>
               ))}
+              {resetHref ? (
+                <Link
+                  href={resetHref}
+                  scroll={false}
+                  onClick={() => setOpen(false)}
+                  className={cls(
+                    cell,
+                    "ml-auto inline-flex min-h-11 px-3 text-mute underline underline-offset-4 sm:hidden",
+                  )}
+                >
+                  Reset all
+                </Link>
+              ) : null}
             </div>
           ) : null}
         </div>
