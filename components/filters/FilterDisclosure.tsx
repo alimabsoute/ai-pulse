@@ -55,7 +55,7 @@ export function FilterDisclosure({
   }
 
   const cell =
-    "inline-flex items-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors";
+    "items-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors";
   const on = "bg-gold/10 text-gold shadow-[inset_0_-2px_0_var(--gold)]";
 
   return (
@@ -71,7 +71,7 @@ export function FilterDisclosure({
               aria-current={r.active ? "true" : undefined}
               className={cls(
                 cell,
-                "justify-center px-2.5 sm:px-3",
+                "inline-flex justify-center px-2 sm:px-3",
                 r.active ? on : "text-paper-dim hover:bg-panel-2 hover:text-paper",
               )}
             >
@@ -92,7 +92,7 @@ export function FilterDisclosure({
               onClick={() => toggle(g.id)}
               className={cls(
                 cell,
-                "min-w-0 flex-1 justify-between gap-1.5 px-2.5 sm:flex-none sm:justify-start sm:gap-2 sm:border-r sm:border-line sm:px-3",
+                "inline-flex min-w-0 flex-auto justify-between gap-1.5 px-2.5 sm:flex-none sm:justify-start sm:gap-2 sm:border-r sm:border-line sm:px-3",
                 expanded ? "bg-panel-2 text-paper" : "text-paper-dim hover:bg-panel-2",
               )}
             >
@@ -165,7 +165,7 @@ export function FilterDisclosure({
                   onClick={() => setOpen(false)}
                   className={cls(
                     cell,
-                    "min-h-11 gap-1.5 rounded-[1px] px-3 sm:min-h-7 sm:px-2.5",
+                    "inline-flex min-h-11 gap-1.5 rounded-[1px] px-3 sm:min-h-7 sm:px-2.5",
                     o.active
                       ? "bg-gold/10 text-gold"
                       : "text-paper-dim hover:bg-panel-2 hover:text-paper",
@@ -179,6 +179,19 @@ export function FilterDisclosure({
                   ) : null}
                 </Link>
               ))}
+              {resetHref ? (
+                <Link
+                  href={resetHref}
+                  scroll={false}
+                  onClick={() => setOpen(false)}
+                  className={cls(
+                    cell,
+                    "ml-auto inline-flex min-h-11 px-3 text-mute underline underline-offset-4 sm:hidden",
+                  )}
+                >
+                  Reset all
+                </Link>
+              ) : null}
             </div>
           ) : null}
         </div>
