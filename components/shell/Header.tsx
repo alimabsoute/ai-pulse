@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeaderSignup } from "@/components/shell/HeaderSignup";
 
 const DESKTOP = [
   { href: "/", label: "Home" },
@@ -36,10 +37,7 @@ export function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
-          <span className="live-dot" aria-hidden />
-          <span className="text-gold">Live</span>
-        </div>
+        <HeaderSignup />
       </div>
     </header>
   );
