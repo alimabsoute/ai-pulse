@@ -1,5 +1,5 @@
 import type { Paper, SourceStatus } from "./types";
-import { fetchText } from "./http";
+import { fetchText, UA } from "./http";
 
 function tag(xml: string, name: string): string | null {
   const m = xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`));
@@ -19,9 +19,15 @@ function allTags(xml: string, name: string): string[] {
 export async function loadArxiv(): Promise<{ papers: Paper[]; status: SourceStatus }> {
   const url =
     "https://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=8&sortBy=submittedDate&sortOrder=descending";
-  const res = await fetchText(url, {
-    headers: { Accept: "application/atom+xml,application/xml,text/xml" },
-  });
+  const init = {
+    headers: { Accept: "application/atom+xml,application/xml,text/xml", "User-Agent": UA },
+  };
+  let res = await fetchText(url, init);
+  if (!res.ok && res.error === "rate_limited") {
+    // arXiv asks clients to leave 3s between requests.
+    await new Promise((r) => setTimeout(r, 3200));
+    res = await fetchText(url, init);
+  }
   if (!res.ok) {
     return {
       papers: [],

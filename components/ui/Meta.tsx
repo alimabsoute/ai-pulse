@@ -20,12 +20,22 @@ export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
       </p>
     );
   }
+  if (ok.length) {
+    return (
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute">
+        Sources live · {ok.map((s) => `${s.id} ${s.count}`).join(" · ")}
+        <span className="text-rose/80">
+          {" · "}
+          {failed.map((s) => `${s.id} unavailable (${s.error ?? s.status}), retrying`).join(" · ")}
+        </span>
+      </p>
+    );
+  }
   return (
     <div className="border border-rose/40 bg-rose/10 px-3 py-2 font-mono text-[11px] text-paper-dim">
       <span className="text-rose">Degraded.</span>{" "}
-      {failed.map((s) => `${s.id} ${s.error ?? s.status}`).join(" · ")}
-      {ok.length ? ` · still serving ${ok.map((s) => s.id).join(", ")}` : ""}
-      . No numbers are invented.
+      {failed.map((s) => `${s.id} ${s.error ?? s.status}`).join(" · ")}. Retrying every 10
+      minutes. No numbers are invented.
     </div>
   );
 }
