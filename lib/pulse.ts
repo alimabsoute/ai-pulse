@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import type { Filters, RangeKey, Repo, Snapshot } from "./types";
+import type { Filters, RangeKey, Repo, Snapshot, SourceStatus } from "./types";
 import { loadGithub } from "./github";
 import { loadHuggingFace } from "./huggingface";
 import { loadArxiv } from "./arxiv";
@@ -31,11 +31,62 @@ function tallies(repos: Repo[]): Pick<Snapshot, "languages" | "topics"> {
   };
 }
 
+/** How long a failed source read is held before it is tried again. */
+const RETRY_SECONDS = 600;
+
+class SourceFailed<T> extends Error {
+  constructor(readonly result: T) {
+    super("source_failed");
+  }
+}
+
+/**
+ * Cache each source on its own, and only keep a read for the full day when every
+ * part of it succeeded. A failed read used to be cached for 24h along with the rest
+ * of the snapshot, so one 429 meant a "Degraded" banner until the next day.
+ * Now: good reads live for CACHE_SECONDS, failed reads for RETRY_SECONDS, and while
+ * a source is failing the last good read keeps being served if there is one.
+ */
+function resilient<T extends object>(
+  key: string[],
+  load: () => Promise<T>,
+  statuses: (r: T) => SourceStatus[],
+): () => Promise<T & { fetchedAt: string }> {
+  const good = unstable_cache(
+    async () => {
+      const r = await load();
+      if (statuses(r).some((s) => !s.ok)) throw new SourceFailed(r);
+      return { ...r, fetchedAt: new Date().toISOString() };
+    },
+    [...key, "good"],
+    { revalidate: CACHE_SECONDS, tags: ["pulse"] },
+  );
+  return unstable_cache(
+    async () => {
+      try {
+        return await good();
+      } catch (err) {
+        if (err instanceof SourceFailed) {
+          return { ...(err.result as T), fetchedAt: new Date().toISOString() };
+        }
+        throw err;
+      }
+    },
+    [...key, "attempt"],
+    { revalidate: RETRY_SECONDS, tags: ["pulse"] },
+  );
+}
+
 async function buildSnapshot(range: RangeKey): Promise<Snapshot> {
-  const [gh, hf, arxiv] = await Promise.all([loadGithub(range), loadHuggingFace(), loadArxiv()]);
+  const [gh, hf, arxiv] = await Promise.all([
+    resilient(["pulse-github", range], () => loadGithub(range), (r) => r.sources)(),
+    resilient(["pulse-hf"], loadHuggingFace, (r) => r.sources)(),
+    resilient(["pulse-arxiv"], loadArxiv, (r) => [r.status])(),
+  ]);
   const { languages, topics } = tallies(gh.repos);
   return {
-    fetchedAt: new Date().toISOString(),
+    // The repo tape is the headline data, so the stamp follows it.
+    fetchedAt: gh.fetchedAt,
     range,
     repos: gh.repos,
     models: hf.models,
@@ -49,12 +100,7 @@ async function buildSnapshot(range: RangeKey): Promise<Snapshot> {
 }
 
 export function getSnapshot(range: RangeKey): Promise<Snapshot> {
-  const cached = unstable_cache(
-    async () => buildSnapshot(range),
-    ["pulse-snapshot", range],
-    { revalidate: CACHE_SECONDS, tags: ["pulse", `pulse-${range}`] },
-  );
-  return cached();
+  return buildSnapshot(range);
 }
 
 export function parseFilters(sp: Record<string, string | string[] | undefined> | undefined): Filters {
