@@ -49,7 +49,7 @@ function fetchErrorReason(err: unknown): string {
   }
   const name = err instanceof Error ? err.name : "";
   if (name === "TimeoutError" || name === "AbortError" || /timeout/i.test(detail)) {
-    return `timeout: ${detail}`;
+    return "timeout";
   }
   if (err instanceof TypeError) {
     return `network: ${detail}`;
