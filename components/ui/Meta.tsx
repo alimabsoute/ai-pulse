@@ -30,16 +30,11 @@ export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
       </p>
     );
   }
+  // Partial failures are expected on Vercel SSR — never paint rose when any source is live.
   if (ok.length) {
     return (
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute">
         Sources live · {ok.map((s) => `${s.id} ${s.count}`).join(" · ")}
-        <span className="text-rose/80">
-          {" · "}
-          {failed
-            .map((s) => `${s.id} unavailable (${shortSourceError(s.error, s.status)}), retrying`)
-            .join(" · ")}
-        </span>
       </p>
     );
   }
