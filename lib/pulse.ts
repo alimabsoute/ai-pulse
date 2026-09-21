@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import type { Filters, RangeKey, Repo, Snapshot, SourceStatus } from "./types";
+import type { Filters, HfItem, Paper, RangeKey, Repo, Snapshot, SourceStatus } from "./types";
 import { loadGithub } from "./github";
 import { loadHuggingFace } from "./huggingface";
 import { loadArxiv } from "./arxiv";
@@ -78,11 +78,42 @@ function resilient<T extends object>(
 }
 
 async function buildSnapshot(range: RangeKey): Promise<Snapshot> {
-  const [gh, hf, arxiv] = await Promise.all([
+  // Isolate families so one slow upstream cannot reject the whole homepage.
+  const [ghSettled, hfSettled, arxivSettled] = await Promise.allSettled([
     resilient(["pulse-github", range], () => loadGithub(range), (r) => r.sources)(),
     resilient(["pulse-hf"], loadHuggingFace, (r) => r.sources)(),
     resilient(["pulse-arxiv"], loadArxiv, (r) => [r.status])(),
   ]);
+
+  const emptyGh = {
+    repos: [] as Repo[],
+    sources: [
+      { id: "github-trending", ok: false, status: 0, error: "unavailable", count: 0 },
+      { id: "github-search", ok: false, status: 0, error: "unavailable", count: 0 },
+    ],
+    fetchedAt: new Date().toISOString(),
+  };
+  const emptyHf = {
+    models: [] as HfItem[],
+    datasets: [] as HfItem[],
+    spaces: [] as HfItem[],
+    sources: [
+      { id: "hf-models", ok: false, status: 0, error: "unavailable", count: 0 },
+      { id: "hf-datasets", ok: false, status: 0, error: "unavailable", count: 0 },
+      { id: "hf-spaces", ok: false, status: 0, error: "unavailable", count: 0 },
+    ],
+    fetchedAt: new Date().toISOString(),
+  };
+  const emptyArxiv = {
+    papers: [] as Paper[],
+    status: { id: "arxiv", ok: false, status: 0, error: "unavailable", count: 0 },
+    fetchedAt: new Date().toISOString(),
+  };
+
+  const gh = ghSettled.status === "fulfilled" ? ghSettled.value : emptyGh;
+  const hf = hfSettled.status === "fulfilled" ? hfSettled.value : emptyHf;
+  const arxiv = arxivSettled.status === "fulfilled" ? arxivSettled.value : emptyArxiv;
+
   const { languages, topics } = tallies(gh.repos);
   return {
     // The repo tape is the headline data, so the stamp follows it.

@@ -8,7 +8,6 @@ function shortSourceError(error?: string, status?: number): string {
   if (/rate_?limit/i.test(raw)) return "rate limited";
   if (/network/i.test(raw)) return "network";
   if (/^http_\d+$/i.test(raw)) return raw.replace(/^http_/i, "http ");
-  // keep short; drop duplicated "Error: " noise
   return raw.replace(/^timeout:\s*/i, "").replace(/^Error:\s*/i, "").slice(0, 48);
 }
 
@@ -20,6 +19,11 @@ export function UpdatedStamp({ iso }: { iso: string }) {
   );
 }
 
+/**
+ * Partial upstream failures are expected (Vercel SSR timeouts). Never paint a
+ * persistent rose error when at least one source is live — just list the live ones.
+ * Full "Degraded" only when every source failed.
+ */
 export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
   const failed = sources.filter((s) => !s.ok);
   const ok = sources.filter((s) => s.ok);
@@ -34,20 +38,14 @@ export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
     return (
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute">
         Sources live · {ok.map((s) => `${s.id} ${s.count}`).join(" · ")}
-        <span className="text-rose/80">
-          {" · "}
-          {failed
-            .map((s) => `${s.id} unavailable (${shortSourceError(s.error, s.status)}), retrying`)
-            .join(" · ")}
-        </span>
       </p>
     );
   }
   return (
     <div className="border border-rose/40 bg-rose/10 px-3 py-2 font-mono text-[11px] text-paper-dim">
       <span className="text-rose">Degraded.</span>{" "}
-      {failed.map((s) => `${s.id} ${shortSourceError(s.error, s.status)}`).join(" · ")}. Retrying
-      every 10 minutes. No numbers are invented.
+      {failed.map((s) => `${s.id} ${shortSourceError(s.error, s.status)}`).join(" · ")}.
+      Retrying every 10 minutes. No numbers are invented.
     </div>
   );
 }
