@@ -2,6 +2,16 @@ import type { ReactNode } from "react";
 import type { SourceStatus } from "@/lib/types";
 import { formatStamp } from "@/lib/format";
 
+function shortSourceError(error?: string, status?: number): string {
+  const raw = (error ?? (status != null ? String(status) : "error")).trim();
+  if (/timeout/i.test(raw)) return "timeout";
+  if (/rate_?limit/i.test(raw)) return "rate limited";
+  if (/network/i.test(raw)) return "network";
+  if (/^http_\d+$/i.test(raw)) return raw.replace(/^http_/i, "http ");
+  // keep short; drop duplicated "Error: " noise
+  return raw.replace(/^timeout:\s*/i, "").replace(/^Error:\s*/i, "").slice(0, 48);
+}
+
 export function UpdatedStamp({ iso }: { iso: string }) {
   return (
     <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
@@ -26,7 +36,9 @@ export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
         Sources live · {ok.map((s) => `${s.id} ${s.count}`).join(" · ")}
         <span className="text-rose/80">
           {" · "}
-          {failed.map((s) => `${s.id} unavailable (${s.error ?? s.status}), retrying`).join(" · ")}
+          {failed
+            .map((s) => `${s.id} unavailable (${shortSourceError(s.error, s.status)}), retrying`)
+            .join(" · ")}
         </span>
       </p>
     );
@@ -34,8 +46,8 @@ export function SourceBanner({ sources }: { sources: SourceStatus[] }) {
   return (
     <div className="border border-rose/40 bg-rose/10 px-3 py-2 font-mono text-[11px] text-paper-dim">
       <span className="text-rose">Degraded.</span>{" "}
-      {failed.map((s) => `${s.id} ${s.error ?? s.status}`).join(" · ")}. Retrying every 10
-      minutes. No numbers are invented.
+      {failed.map((s) => `${s.id} ${shortSourceError(s.error, s.status)}`).join(" · ")}. Retrying
+      every 10 minutes. No numbers are invented.
     </div>
   );
 }

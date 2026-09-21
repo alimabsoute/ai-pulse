@@ -6,7 +6,8 @@ export const UA =
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-const FETCH_TIMEOUT_MS = 15_000;
+/** Vercel→upstream SSR often needs >15s for GH trending HTML + HF/arxiv. */
+const FETCH_TIMEOUT_MS = 28_000;
 
 export const MEDIA_TIMEOUT_MS = 8_000;
 
