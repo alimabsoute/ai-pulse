@@ -31,7 +31,11 @@ export default async function HomePage({
     [...repos].sort((a, b) => (b.starsAdded ?? -1) - (a.starsAdded ?? -1) || b.heat - a.heat)[0] ??
     null;
   const window = rangeLabel(filters.range);
-  const featured = repos.slice(0, 4);
+  // Shelf chips + ranked tape must not repeat the same head of the list.
+  const SHELF_COUNT = 5;
+  const TAPE_LIST_COUNT = 48;
+  const featured = repos.slice(0, SHELF_COUNT);
+  const tapeList = repos.slice(SHELF_COUNT, SHELF_COUNT + TAPE_LIST_COUNT);
 
   return (
     <div className="flex flex-col gap-8">
@@ -63,7 +67,7 @@ export default async function HomePage({
                 aside={<span className="font-mono text-[11px] text-mute">{repos.length}</span>}
               />
               <div className="reveal-list grid grid-cols-1 gap-3">
-                {repos.slice(0, 12).map((repo) => (
+                {tapeList.map((repo) => (
                   <RepoCard key={repo.id} repo={repo} filters={filters} basePath="/" />
                 ))}
               </div>

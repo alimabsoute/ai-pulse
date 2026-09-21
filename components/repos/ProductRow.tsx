@@ -15,7 +15,7 @@ export function ProductRow({
   basePath?: string;
 }) {
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 md:snap-none">
+    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0 md:snap-none">
       {repos.map((repo) => (
         <ProductCard key={repo.id} repo={repo} filters={filters} basePath={basePath} />
       ))}
@@ -44,7 +44,7 @@ function ProductCard({
           src={githubOgUrl(repo.owner, repo.name)}
           alt={`${repo.fullName} preview`}
           fill
-          sizes="(min-width: 768px) 25vw, 70vw"
+          sizes="(min-width: 768px) 20vw, 70vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
       </div>
