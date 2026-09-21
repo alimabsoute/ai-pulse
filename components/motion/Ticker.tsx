@@ -1,28 +1,50 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import type { Repo } from "@/lib/types";
 import { signedNumber } from "@/lib/format";
 
 export function Ticker({ repos }: { repos: Repo[] }) {
-  const movers = [...repos]
-    .sort((a, b) => {
-      const av = Math.abs(a.starsAdded ?? -1);
-      const bv = Math.abs(b.starsAdded ?? -1);
-      if (bv !== av) return bv - av;
-      return b.heat - a.heat;
-    })
-    .slice(0, 18);
+  const items = useMemo(() => {
+    const movers = [...repos]
+      .sort((a, b) => {
+        const av = Math.abs(a.starsAdded ?? -1);
+        const bv = Math.abs(b.starsAdded ?? -1);
+        if (bv !== av) return bv - av;
+        return b.heat - a.heat;
+      })
+      .slice(0, 18);
 
-  if (!movers.length) return null;
+    return movers.map((r) => ({
+      id: r.id,
+      name: r.name,
+      value: r.starsAdded !== null ? signedNumber(r.starsAdded) : `heat ${r.heat}`,
+      mint: r.starsAdded !== null && r.starsAdded > 0,
+    }));
+  }, [repos]);
 
-  const items = movers.map((r) => ({
-    id: r.id,
-    name: r.name,
-    value: r.starsAdded !== null ? signedNumber(r.starsAdded) : `heat ${r.heat}`,
-    mint: r.starsAdded !== null && r.starsAdded > 0,
-  }));
+  // Marquee needs a doubled strip for seamless scroll. With reduced-motion (or before
+  // mount), show a single pass so the same names are not painted twice in a row.
+  const [loop, setLoop] = useState(items);
 
-  let base = items;
-  while (base.length < 8) base = base.concat(items);
-  const loop = base.concat(base);
+  useEffect(() => {
+    if (!items.length) {
+      setLoop([]);
+      return;
+    }
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setLoop(items);
+      return;
+    }
+    let base = items;
+    while (base.length < 8) base = base.concat(items);
+    setLoop(base.concat(base));
+  }, [items]);
+
+  if (!items.length) return null;
 
   return (
     <div
